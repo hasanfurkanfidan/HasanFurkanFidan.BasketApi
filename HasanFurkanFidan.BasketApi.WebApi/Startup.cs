@@ -1,3 +1,6 @@
+using HasanFurkanFidan.BasketApi.WebApi.Services;
+using HasanFurkanFidan.BasketApi.WebApi.Settings;
+using HasanFurkanFidan.UdemyCourse.SHARED.IdentityServices;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
@@ -6,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
@@ -26,7 +30,16 @@ namespace HasanFurkanFidan.BasketApi.WebApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
+            services.Configure<RedisSettings>(Configuration.GetSection("RedisSettings"));
+            services.AddSingleton<RedisManager>(sp=> {
+                var redisSettings = sp.GetRequiredService<IOptions<RedisSettings>>().Value;
+                var redis = new RedisManager(redisSettings.Host, redisSettings.Port);
+                redis.Connect();
+                return redis;
+            });
+            services.AddHttpContextAccessor();
+            services.AddScoped<IBasketService, BasketManager>();
+            services.AddScoped<IIdentityService, IdentityManager>();
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
